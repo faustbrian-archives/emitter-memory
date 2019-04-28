@@ -292,6 +292,16 @@ describe(".listeners", () => {
 	});
 });
 
+describe(".rawListeners", () => {
+	it("should return the total listener count", () => {
+		const listener = (): null => null;
+
+		emitter.on("firstEvent", listener);
+
+		expect(emitter.rawListeners("firstEvent")).toEqual([listener]);
+	});
+});
+
 describe(".eventNames", () => {
 	it("should return the total listener count", () => {
 		emitter.on("firstEvent", () => null);

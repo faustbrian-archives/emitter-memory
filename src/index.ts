@@ -96,6 +96,10 @@ export class Evento {
 		return this.listenersEvent.get(name);
 	}
 
+	public rawListeners(name: EventName): EventHandler[] {
+		return [...this.listeners(name)];
+	}
+
 	public eventNames(): EventName[] {
 		return [...this.listenersEvent.keys()];
 	}
