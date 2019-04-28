@@ -31,40 +31,31 @@ export class Evento {
 	public async emit(eventName: EventName, eventData?: any): Promise<void> {
 		await Promise.resolve();
 
-		const listenersEvent: Set<EventHandler> = this.listeners(eventName);
-		const listenersWildcard: Set<WildcardEventHandler> = this.listenersWildcard;
-
 		await Promise.all([
-			Array.from(listenersEvent).map((listener: EventHandler) => {
-				if (listenersEvent.has(listener)) {
-					return listener(eventData);
-				}
-			}),
-			Array.from(listenersWildcard).map((listener: WildcardEventHandler) => {
-				if (listenersWildcard.has(listener)) {
-					return listener(eventName, eventData);
-				}
-			}),
+			Array.from(this.listeners(eventName)).map((listener: EventHandler) => listener(eventData)),
+			Array.from(this.listenersWildcard).map((listener: WildcardEventHandler) => listener(eventName, eventData)),
 		]);
 	}
 
 	public async emitSeq(eventName: EventName, eventData?: any): Promise<void> {
 		await Promise.resolve();
 
-		const listenersEvent: Set<EventHandler> = this.listeners(eventName);
-
-		for (const listener of listenersEvent.values()) {
-			if (listenersEvent.has(listener)) {
-				await listener(eventData);
-			}
+		for (const listener of this.listeners(eventName).values()) {
+			await listener(eventData);
 		}
 
-		const listenersWildcard: Set<WildcardEventHandler> = this.listenersWildcard;
+		for (const listener of this.listenersWildcard.values()) {
+			await listener(eventName, eventData);
+		}
+	}
 
-		for (const listener of listenersWildcard.values()) {
-			if (listenersWildcard.has(listener)) {
-				await listener(eventName, eventData);
-			}
+	public emitSync(eventName: EventName, eventData?: any): void {
+		for (const listener of this.listeners(eventName).values()) {
+			listener(eventData);
+		}
+
+		for (const listener of this.listenersWildcard.values()) {
+			listener(eventName, eventData);
 		}
 	}
 

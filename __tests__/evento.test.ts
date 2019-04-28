@@ -118,6 +118,26 @@ describe(".emit", () => {
 });
 
 describe(".emitSeq", () => {
+	it("should not execute an event listener without await (async behaviour)", () => {
+		let unicorn: boolean = false;
+
+		emitter.on("firstEvent", () => (unicorn = true));
+
+		emitter.emitSeq("firstEvent");
+
+		expect(unicorn).toBeFalse();
+	});
+
+	it("should not execute a wildcard listener without await (async behaviour)", () => {
+		let unicorn: boolean = false;
+
+		emitter.onAny(() => (unicorn = true));
+
+		emitter.emitSeq("firstEvent");
+
+		expect(unicorn).toBeFalse();
+	});
+
 	it("should emit all events in sequence", () => {
 		const events: number[] = [];
 
@@ -135,15 +155,45 @@ describe(".emitSeq", () => {
 
 		emitter.emitSeq("firstEvent");
 	});
+});
 
-	it("should not execute an event listener without await", () => {
+describe(".emitSync", () => {
+	it("should execute an event listener without await", () => {
 		let unicorn: boolean = false;
 
 		emitter.on("firstEvent", () => (unicorn = true));
 
-		emitter.emitSeq("firstEvent");
+		emitter.emitSync("firstEvent");
 
-		expect(unicorn).toBeFalse();
+		expect(unicorn).toBeTrue();
+	});
+
+	it("should execute a wildcard listener without await", () => {
+		let unicorn: boolean = false;
+
+		emitter.onAny(() => (unicorn = true));
+
+		emitter.emitSync("firstEvent");
+
+		expect(unicorn).toBeTrue();
+	});
+
+	it("should emit all events in sequence", () => {
+		const events: number[] = [];
+
+		const listener = async (data: any) => {
+			events.push(data);
+
+			if (events.length >= 3) {
+				expect(events).toEqual([1, 2, 3]);
+			}
+		};
+
+		emitter.on("firstEvent", () => listener(1));
+		emitter.on("firstEvent", () => listener(2));
+		emitter.on("firstEvent", () => listener(3));
+
+		emitter.emitSync("firstEvent");
 	});
 });
 
