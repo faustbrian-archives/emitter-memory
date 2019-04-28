@@ -231,3 +231,23 @@ describe(".listenerCount", () => {
 		expect(emitter.listenerCount()).toBe(3);
 	});
 });
+
+describe(".listeners", () => {
+	it("should return the total listener count", () => {
+		const listener = (): null => null;
+
+		emitter.on("firstEvent", listener);
+
+		expect(emitter.listeners("firstEvent")).toEqual(new Set([listener]));
+	});
+});
+
+describe(".eventNames", () => {
+	it("should return the total listener count", () => {
+		emitter.on("firstEvent", () => null);
+		emitter.on("secondEvent", () => null);
+		emitter.onAny(() => null);
+
+		expect(emitter.eventNames()).toEqual(["firstEvent", "secondEvent"]);
+	});
+});

@@ -28,7 +28,6 @@
 		"test": "jest",
 		"test:watch": "jest --watchAll"
 	},
-	"dependencies": {},
 	"devDependencies": {
 		"@sindresorhus/tsconfig": "^0.3.0",
 		"@types/jest": "^24.0.11",

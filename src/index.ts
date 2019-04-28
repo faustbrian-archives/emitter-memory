@@ -4,7 +4,6 @@ export type WildcardEventHandler = (eventName: EventName, eventData: any) => voi
 
 /**
  * @TODO
- * - mimic node.js event emitter API
  * - add emitSync / emitSeqSync
  */
 export class Evento {
@@ -12,13 +11,13 @@ export class Evento {
 	private readonly listenersEvent: Map<EventName, Set<EventHandler>> = new Map<EventName, Set<EventHandler>>();
 
 	public on(eventName: EventName, listener: EventHandler): () => void {
-		this.getListeners(eventName).add(listener);
+		this.listeners(eventName).add(listener);
 
 		return this.off.bind(this, eventName, listener);
 	}
 
 	public off(eventName: EventName, listener: EventHandler): void {
-		this.getListeners(eventName).delete(listener);
+		this.listeners(eventName).delete(listener);
 	}
 
 	public once(eventName: EventName, listener: EventHandler): void {
@@ -32,7 +31,7 @@ export class Evento {
 	public async emit(eventName: EventName, eventData?: any): Promise<void> {
 		await Promise.resolve();
 
-		const listenersEvent: Set<EventHandler> = this.getListeners(eventName);
+		const listenersEvent: Set<EventHandler> = this.listeners(eventName);
 		const listenersWildcard: Set<WildcardEventHandler> = this.listenersWildcard;
 
 		await Promise.all([
@@ -52,7 +51,7 @@ export class Evento {
 	public async emitSeq(eventName: EventName, eventData?: any): Promise<void> {
 		await Promise.resolve();
 
-		const listenersEvent: Set<EventHandler> = this.getListeners(eventName);
+		const listenersEvent: Set<EventHandler> = this.listeners(eventName);
 
 		for (const listener of listenersEvent.values()) {
 			if (listenersEvent.has(listener)) {
@@ -81,7 +80,7 @@ export class Evento {
 
 	public clearListeners(eventName?: EventName): void {
 		if (eventName) {
-			this.getListeners(eventName).clear();
+			this.listeners(eventName).clear();
 		} else {
 			this.listenersWildcard.clear();
 			this.listenersEvent.clear();
@@ -90,7 +89,7 @@ export class Evento {
 
 	public listenerCount(eventName?: EventName): number {
 		if (eventName) {
-			return this.listenersWildcard.size + this.getListeners(eventName).size;
+			return this.listenersWildcard.size + this.listeners(eventName).size;
 		}
 
 		let count: number = this.listenersWildcard.size;
@@ -102,11 +101,15 @@ export class Evento {
 		return count;
 	}
 
-	private getListeners(eventName: EventName): Set<EventHandler> {
+	public listeners(eventName: EventName): Set<EventHandler> {
 		if (!this.listenersEvent.has(eventName)) {
 			this.listenersEvent.set(eventName, new Set());
 		}
 
 		return this.listenersEvent.get(eventName);
+	}
+
+	public eventNames(): EventName[] {
+		return [...this.listenersEvent.keys()];
 	}
 }
