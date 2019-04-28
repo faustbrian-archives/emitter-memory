@@ -2,10 +2,6 @@ export type EventName = string | symbol;
 export type EventHandler = (eventData: any) => void;
 export type WildcardEventHandler = (eventName: EventName, eventData: any) => void;
 
-/**
- * @TODO
- * - add emitSync / emitSeqSync
- */
 export class Evento {
 	private readonly listenersWildcard: Set<WildcardEventHandler> = new Set<WildcardEventHandler>();
 	private readonly listenersEvent: Map<EventName, Set<EventHandler>> = new Map<EventName, Set<EventHandler>>();
