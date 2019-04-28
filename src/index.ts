@@ -2,6 +2,11 @@ export type EventName = string | symbol;
 export type EventHandler = (eventData: any) => void;
 export type WildcardEventHandler = (eventName: EventName, eventData: any) => void;
 
+/**
+ * @TODO
+ * - mimic node.js event emitter API
+ * - add emitSync / emitSeqSync
+ */
 export class Evento {
 	private readonly listenersWildcard: Set<WildcardEventHandler> = new Set<WildcardEventHandler>();
 	private readonly listenersEvent: Map<EventName, Set<EventHandler>> = new Map<EventName, Set<EventHandler>>();
@@ -25,6 +30,8 @@ export class Evento {
 	}
 
 	public async emit(eventName: EventName, eventData?: any): Promise<void> {
+		await Promise.resolve();
+
 		const listenersEvent: Set<EventHandler> = this.getListeners(eventName);
 		const listenersWildcard: Set<WildcardEventHandler> = this.listenersWildcard;
 
@@ -43,10 +50,12 @@ export class Evento {
 	}
 
 	public async emitSeq(eventName: EventName, eventData?: any): Promise<void> {
-		const listeners: Set<EventHandler> = this.getListeners(eventName);
+		await Promise.resolve();
 
-		for (const listener of listeners.values()) {
-			if (listeners.has(listener)) {
+		const listenersEvent: Set<EventHandler> = this.getListeners(eventName);
+
+		for (const listener of listenersEvent.values()) {
+			if (listenersEvent.has(listener)) {
 				await listener(eventData);
 			}
 		}
