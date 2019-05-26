@@ -108,19 +108,70 @@ describe(".forget", () => {
 });
 
 describe(".forgetMany", () => {
-	// ...
+	it("should remove many event listeners", async () => {
+		const calls: number[] = [];
+		const listener1 = () => calls.push(1);
+		const listener2 = () => calls.push(2);
+
+		dispatcher.listenMany([["firstEvent", listener1], ["secondEvent", listener2]]);
+
+		await dispatcher.dispatch("firstEvent");
+		await dispatcher.dispatch("secondEvent");
+
+		expect(calls).toEqual([1, 2]);
+
+		dispatcher.forgetMany([["firstEvent", listener1], ["secondEvent", listener2]]);
+
+		await dispatcher.dispatch("firstEvent");
+		await dispatcher.dispatch("secondEvent");
+
+		expect(calls).toEqual([1, 2]);
+	});
 });
 
 describe(".flush", () => {
-	// ...
+	it("should remove all event listeners", async () => {
+		const calls: number[] = [];
+		const listener = () => calls.push(1);
+
+		dispatcher.listen("firstEvent", listener);
+
+		await dispatcher.dispatch("firstEvent");
+
+		expect(calls).toEqual([1]);
+
+		dispatcher.flush();
+
+		await dispatcher.dispatch("firstEvent");
+
+		expect(calls).toEqual([1]);
+	});
 });
 
 describe(".getListeners", () => {
-	// ...
+	it("should get all event listeners for an event", async () => {
+		const calls: number[] = [];
+		const listener = () => calls.push(1);
+
+		expect(dispatcher.getListeners("firstEvent")).toEqual([]);
+
+		dispatcher.listen("firstEvent", listener);
+
+		expect(dispatcher.getListeners("firstEvent")).toEqual([listener]);
+	});
 });
 
 describe(".hasListeners", () => {
-	// ...
+	it("should get all event listeners for an event", async () => {
+		const calls: number[] = [];
+		const listener = () => calls.push(1);
+
+		expect(dispatcher.hasListeners("firstEvent")).toBeFalse();
+
+		dispatcher.listen("firstEvent", listener);
+
+		expect(dispatcher.hasListeners("firstEvent")).toBeTrue();
+	});
 });
 
 describe(".dispatch", () => {
