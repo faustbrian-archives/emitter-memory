@@ -110,12 +110,20 @@ export class MemoryDispatcher implements IEventDispatcher {
 		return listeners;
 	}
 
-	private mapListenerWithData<T>(events: Map<EventName, EventListener[]>, data?: T): void[] {
-		const listeners: void[] = [];
+	private mapListenerWithData<T>(events: Map<EventName, EventListener[]>, data?: T): Array<Promise<any>> {
+		const listeners: Array<Promise<any>> = [];
 
 		for (const [event, eventListeners] of [...events.entries()]) {
 			for (const listener of eventListeners) {
-				listeners.push(listener(event, data));
+				listeners.push(
+					new Promise((resolve, reject) => {
+						try {
+							resolve(listener(event, data));
+						} catch (error) {
+							reject(error);
+						}
+					}),
+				);
 			}
 		}
 
