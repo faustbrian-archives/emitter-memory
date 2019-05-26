@@ -107,6 +107,22 @@ describe(".forget", () => {
 	});
 });
 
+describe(".forgetMany", () => {
+	// ...
+});
+
+describe(".flush", () => {
+	// ...
+});
+
+describe(".getListeners", () => {
+	// ...
+});
+
+describe(".hasListeners", () => {
+	// ...
+});
+
 describe(".dispatch", () => {
 	it("should emit one event", () => {
 		dispatcher.listen("firstEvent", (_, data) => {
@@ -197,9 +213,9 @@ describe(".dispatchSync", () => {
 	// it("should execute a wildcard listener without await", () => {
 	// 	let unicorn: boolean = false;
 
-	// 	dispatcher.onAny(() => (unicorn = true));
+	// 	dispatcher.listen("*", () => (unicorn = true));
 
-	// 	dispatcher.emitSync("firstEvent");
+	// 	dispatcher.dispatchSync("firstEvent");
 
 	// 	expect(unicorn).toBeTrue();
 	// });
@@ -221,6 +237,18 @@ describe(".dispatchSync", () => {
 
 		dispatcher.dispatchSync("firstEvent");
 	});
+});
+
+describe(".dispatchMany", () => {
+	// ...
+});
+
+describe(".dispatchManySeq", () => {
+	// ...
+});
+
+describe(".dispatchManySync", () => {
+	// ...
 });
 
 // describe(".onAny", () => {
