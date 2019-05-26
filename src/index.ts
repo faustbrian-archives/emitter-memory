@@ -53,20 +53,32 @@ export class MemoryDispatcher implements IEventDispatcher {
 	public async dispatch<T = any>(event: EventName, data?: T): Promise<void> {
 		await Promise.resolve();
 
-		await Promise.all(this.mapListenerWithData(this.getListenersByPattern(event), data));
+		const resolvers: Array<Promise<void>> = [];
+
+		for (const [e, eventListeners] of this.getListenersByPattern(event).entries()) {
+			for (const listener of eventListeners) {
+				resolvers.push(new Promise(resolve => resolve(listener(e, data))));
+			}
+		}
+
+		await Promise.all(resolvers);
 	}
 
 	public async dispatchSeq<T = any>(event: EventName, data?: T): Promise<void> {
 		await Promise.resolve();
 
-		for (const listener of this.getListenersByEvent(event).values()) {
-			await listener(event, data);
+		for (const [e, eventListeners] of this.getListenersByPattern(event).entries()) {
+			for (const listener of eventListeners) {
+				await listener(e, data);
+			}
 		}
 	}
 
 	public dispatchSync<T = any>(event: EventName, data?: T): void {
-		for (const listener of this.getListenersByEvent(event).values()) {
-			listener(event, data);
+		for (const [e, eventListeners] of this.getListenersByPattern(event).entries()) {
+			for (const listener of eventListeners) {
+				listener(e, data);
+			}
 		}
 	}
 
@@ -104,26 +116,6 @@ export class MemoryDispatcher implements IEventDispatcher {
 
 			if (eventListeners.size > 0) {
 				listeners.set(match, Array.from(eventListeners));
-			}
-		}
-
-		return listeners;
-	}
-
-	private mapListenerWithData<T>(events: Map<EventName, EventListener[]>, data?: T): Array<Promise<any>> {
-		const listeners: Array<Promise<any>> = [];
-
-		for (const [event, eventListeners] of [...events.entries()]) {
-			for (const listener of eventListeners) {
-				listeners.push(
-					new Promise((resolve, reject) => {
-						try {
-							resolve(listener(event, data));
-						} catch (error) {
-							reject(error);
-						}
-					}),
-				);
 			}
 		}
 
