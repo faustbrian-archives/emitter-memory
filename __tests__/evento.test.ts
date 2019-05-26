@@ -221,16 +221,6 @@ describe(".dispatchSeq", () => {
 		expect(unicorn).toBeFalse();
 	});
 
-	// it("should not execute a wildcard listener without await (async behaviour)", () => {
-	// 	let unicorn: boolean = false;
-
-	// 	dispatcher.onAny(() => (unicorn = true));
-
-	// 	dispatcher.dispatchSeq("firstEvent");
-
-	// 	expect(unicorn).toBeFalse();
-	// });
-
 	it("should emit all events in sequence", () => {
 		const events: number[] = [];
 
@@ -261,16 +251,6 @@ describe(".dispatchSync", () => {
 		expect(unicorn).toBeTrue();
 	});
 
-	// it("should execute a wildcard listener without await", () => {
-	// 	let unicorn: boolean = false;
-
-	// 	dispatcher.listen("*", () => (unicorn = true));
-
-	// 	dispatcher.dispatchSync("firstEvent");
-
-	// 	expect(unicorn).toBeTrue();
-	// });
-
 	it("should emit all events in sequence", () => {
 		const events: number[] = [];
 
@@ -291,128 +271,28 @@ describe(".dispatchSync", () => {
 });
 
 describe(".dispatchMany", () => {
-	// ...
+	it("should emit many events", async () => {
+		dispatcher.listen("firstEvent", (_, data) => expect(data).toEqual(true));
+		dispatcher.listen("secondEvent", (_, data) => expect(data).toEqual(false));
+
+		await dispatcher.dispatchMany([["firstEvent", true], ["secondEvent", false]]);
+	});
 });
 
 describe(".dispatchManySeq", () => {
-	// ...
+	it("should emit many events", async () => {
+		dispatcher.listen("firstEvent", (_, data) => expect(data).toEqual(true));
+		dispatcher.listen("secondEvent", (_, data) => expect(data).toEqual(false));
+
+		await dispatcher.dispatchManySeq([["firstEvent", true], ["secondEvent", false]]);
+	});
 });
 
 describe(".dispatchManySync", () => {
-	// ...
+	it("should emit many events", () => {
+		dispatcher.listen("firstEvent", (_, data) => expect(data).toEqual(true));
+		dispatcher.listen("secondEvent", (_, data) => expect(data).toEqual(false));
+
+		dispatcher.dispatchManySync([["firstEvent", true], ["secondEvent", false]]);
+	});
 });
-
-// describe(".onAny", () => {
-// 	it("should add a wildcard listener", async () => {
-// 		dispatcher.onAny((eventName, data) => {
-// 			expect(eventName).toBe("firstEvent");
-// 			expect(data).toEqual(true);
-// 		});
-
-// 		await dispatcher.emit("firstEvent", true);
-// 		await dispatcher.dispatchSeq("firstEvent", true);
-// 	});
-// });
-
-// describe(".offAny", () => {
-// 	it("should remove a wildcard listener", async () => {
-// 		const calls: number[] = [];
-// 		const listener = () => calls.push(1);
-
-// 		dispatcher.onAny(listener);
-
-// 		await dispatcher.emit("firstEvent");
-
-// 		expect(calls).toEqual([1]);
-
-// 		dispatcher.offAny(listener);
-
-// 		await dispatcher.emit("firstEvent");
-
-// 		expect(calls).toEqual([1]);
-// 	});
-// });
-
-// describe(".clearListeners", () => {
-// 	it("should clear all listeners", async () => {
-// 		const calls: string[] = [];
-
-// 		dispatcher.on("firstEvent", () => calls.push("firstEvent"));
-// 		dispatcher.on("secondEvent", () => calls.push("secondEvent"));
-// 		dispatcher.onAny(() => calls.push("any"));
-
-// 		await dispatcher.emit("firstEvent");
-// 		await dispatcher.emit("secondEvent");
-
-// 		expect(calls).toEqual(["firstEvent", "any", "secondEvent", "any"]);
-
-// 		dispatcher.clearListeners();
-
-// 		await dispatcher.emit("firstEvent");
-// 		await dispatcher.emit("secondEvent");
-
-// 		expect(calls).toEqual(["firstEvent", "any", "secondEvent", "any"]);
-// 	});
-
-// 	it("should clear all listeners for an event", async () => {
-// 		const calls: string[] = [];
-
-// 		dispatcher.on("firstEvent", () => calls.push("firstEvent"));
-// 		dispatcher.on("secondEvent", () => calls.push("secondEvent"));
-// 		dispatcher.onAny(() => calls.push("any"));
-
-// 		await dispatcher.emit("firstEvent");
-// 		await dispatcher.emit("secondEvent");
-
-// 		expect(calls).toEqual(["firstEvent", "any", "secondEvent", "any"]);
-
-// 		dispatcher.clearListeners("firstEvent");
-
-// 		await dispatcher.emit("firstEvent");
-// 		await dispatcher.emit("secondEvent");
-
-// 		expect(calls).toEqual(["firstEvent", "any", "secondEvent", "any", "any", "secondEvent", "any"]);
-// 	});
-// });
-
-// describe(".listenerCount", () => {
-// 	it("should return the total listener count", () => {
-// 		dispatcher.on("firstEvent", () => null);
-// 		dispatcher.on("secondEvent", () => null);
-// 		dispatcher.onAny(() => null);
-
-// 		expect(dispatcher.listenerCount("firstEvent")).toBe(2);
-// 		expect(dispatcher.listenerCount("secondEvent")).toBe(2);
-// 		expect(dispatcher.listenerCount()).toBe(3);
-// 	});
-// });
-
-// describe(".listeners", () => {
-// 	it("should return the total listener count", () => {
-// 		const listener = (): null => null;
-
-// 		dispatcher.on("firstEvent", listener);
-
-// 		expect(dispatcher.listeners("firstEvent")).toEqual(new Set([listener]));
-// 	});
-// });
-
-// describe(".rawListeners", () => {
-// 	it("should return the total listener count", () => {
-// 		const listener = (): null => null;
-
-// 		dispatcher.on("firstEvent", listener);
-
-// 		expect(dispatcher.rawListeners("firstEvent")).toEqual([listener]);
-// 	});
-// });
-
-// describe(".eventNames", () => {
-// 	it("should return the total listener count", () => {
-// 		dispatcher.on("firstEvent", () => null);
-// 		dispatcher.on("secondEvent", () => null);
-// 		dispatcher.onAny(() => null);
-
-// 		expect(dispatcher.eventNames()).toEqual(["firstEvent", "secondEvent"]);
-// 	});
-// });
