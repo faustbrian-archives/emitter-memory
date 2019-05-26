@@ -1,10 +1,11 @@
 import { EventListener, EventName, IEventDispatcher } from "@emittr/emittr";
+import mm from "micromatch";
 
 export class MemoryDispatcher implements IEventDispatcher {
 	private readonly listeners: Map<EventName, Set<EventListener>> = new Map<EventName, Set<EventListener>>();
 
 	public listen(event: EventName, listener: EventListener): () => void {
-		this.getListenersForEvent(event).add(listener);
+		this.getListenersByEvent(event).add(listener);
 
 		return this.forget.bind(this, event, listener);
 	}
@@ -28,7 +29,7 @@ export class MemoryDispatcher implements IEventDispatcher {
 	}
 
 	public forget(event: EventName, listener: EventListener): void {
-		this.getListenersForEvent(event).delete(listener);
+		this.getListenersByEvent(event).delete(listener);
 	}
 
 	public forgetMany(events: Array<[EventName, EventListener]>): void {
@@ -42,56 +43,82 @@ export class MemoryDispatcher implements IEventDispatcher {
 	}
 
 	public getListeners(event?: EventName): EventListener[] {
-		return Array.from(this.getListenersForEvent(event));
+		return Array.from(this.getListenersByEvent(event));
 	}
 
 	public hasListeners(event: EventName): boolean {
-		return this.getListenersForEvent(event).size > 0;
+		return this.getListenersByEvent(event).size > 0;
 	}
 
-	public async dispatch(event: EventName, data?: any): Promise<void> {
+	public async dispatch<T = any>(event: EventName, data?: T): Promise<void> {
 		await Promise.resolve();
 
-		await Promise.all(
-			Array.from(this.getListenersForEvent(event)).map((listener: EventListener) => listener(event, data)),
-		);
+		await Promise.all(this.mapListenerWithData(this.getListenersByPattern(event), data));
 	}
 
-	public async dispatchSeq(event: EventName, data?: any): Promise<void> {
+	public async dispatchSeq<T = any>(event: EventName, data?: T): Promise<void> {
 		await Promise.resolve();
 
-		for (const listener of this.getListenersForEvent(event).values()) {
+		for (const listener of this.getListenersByEvent(event).values()) {
 			await listener(event, data);
 		}
 	}
 
-	public dispatchSync(event: EventName, data?: any): void {
-		for (const listener of this.getListenersForEvent(event).values()) {
+	public dispatchSync<T = any>(event: EventName, data?: T): void {
+		for (const listener of this.getListenersByEvent(event).values()) {
 			listener(event, data);
 		}
 	}
 
-	public async dispatchMany(events: Array<[EventName, any]>): Promise<void> {
-		await Promise.all(Object.values(events).map((value: [EventName, any]) => this.dispatch(value[0], value[1])));
+	public async dispatchMany<T = any>(events: Array<[EventName, T]>): Promise<void> {
+		await Promise.all(Object.values(events).map((value: [EventName, T]) => this.dispatch(value[0], value[1])));
 	}
 
-	public async dispatchManySeq(events: Array<[EventName, any]>): Promise<void> {
+	public async dispatchManySeq<T = any>(events: Array<[EventName, T]>): Promise<void> {
 		for (const value of Object.values(events)) {
 			await this.dispatchSeq(value[0], value[1]);
 		}
 	}
 
-	public dispatchManySync(events: Array<[EventName, any]>): void {
+	public dispatchManySync<T = any>(events: Array<[EventName, T]>): void {
 		for (const value of Object.values(events)) {
 			this.dispatchSync(value[0], value[1]);
 		}
 	}
 
-	private getListenersForEvent(name: EventName): Set<EventListener> {
+	private getListenersByEvent(name: EventName): Set<EventListener> {
 		if (!this.listeners.has(name)) {
 			this.listeners.set(name, new Set());
 		}
 
 		return this.listeners.get(name);
+	}
+
+	private getListenersByPattern(event: EventName): Map<EventName, EventListener[]> {
+		// @ts-ignore
+		const matches: EventName[] = mm([...this.listeners.keys()], event);
+
+		const listeners: Map<EventName, EventListener[]> = new Map<EventName, EventListener[]>();
+		for (const match of matches) {
+			const eventListeners: Set<EventListener> = this.getListenersByEvent(match);
+
+			if (eventListeners.size > 0) {
+				listeners.set(match, Array.from(eventListeners));
+			}
+		}
+
+		return listeners;
+	}
+
+	private mapListenerWithData<T>(events: Map<EventName, EventListener[]>, data?: T): void[] {
+		const listeners: void[] = [];
+
+		for (const [event, eventListeners] of [...events.entries()]) {
+			for (const listener of eventListeners) {
+				listeners.push(listener(event, data));
+			}
+		}
+
+		return listeners;
 	}
 }

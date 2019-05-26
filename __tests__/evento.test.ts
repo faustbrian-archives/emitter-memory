@@ -208,6 +208,43 @@ describe(".dispatch", () => {
 
 		expect(unicorn).toBeFalse();
 	});
+
+	describe("wildcard", () => {
+		it("should match with a wildcard in the front", async () => {
+			const calls: string[] = [];
+
+			dispatcher.listen("user.created", () => calls.push("user.created"));
+			dispatcher.listen("dashboard.created", () => calls.push("dashboard.created"));
+			dispatcher.listen("manager.created", () => calls.push("manager.created"));
+
+			await dispatcher.dispatch("*.created");
+
+			expect(calls).toHaveLength(3);
+		});
+
+		it("should match with a wildcard in the back", async () => {
+			const calls: string[] = [];
+
+			dispatcher.listen("user.created", () => calls.push("user.created"));
+			dispatcher.listen("user.deleted", () => calls.push("user.deleted"));
+
+			await dispatcher.dispatch("user.*");
+
+			expect(calls).toHaveLength(2);
+		});
+
+		it("should match with a wildcard in the middle", async () => {
+			const calls: string[] = [];
+
+			dispatcher.listen("user.manager.created", () => calls.push("user.manager.created"));
+			dispatcher.listen("user.employee.created", () => calls.push("user.employee.created"));
+			dispatcher.listen("user.friend.created", () => calls.push("user.friend.created"));
+
+			await dispatcher.dispatch("user.*.created", { pos: "middle" });
+
+			expect(calls).toHaveLength(3);
+		});
+	});
 });
 
 describe(".dispatchSeq", () => {
