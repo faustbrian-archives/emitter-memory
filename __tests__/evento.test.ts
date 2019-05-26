@@ -1,16 +1,16 @@
 import "jest-extended";
-import { Evento } from "../src";
+import { MemoryDispatcher } from "../src";
 
-let emitter: Evento;
-beforeEach(() => (emitter = new Evento()));
+let dispatcher: MemoryDispatcher;
+beforeEach(() => (dispatcher = new MemoryDispatcher()));
 
-describe(".on", () => {
+describe(".listen", () => {
 	it("should add an event listener", async () => {
 		const calls: number[] = [];
-		emitter.on("firstEvent", () => calls.push(1));
-		emitter.on("firstEvent", () => calls.push(2));
+		dispatcher.listen("firstEvent", () => calls.push(1));
+		dispatcher.listen("firstEvent", () => calls.push(2));
 
-		await emitter.emit("firstEvent");
+		await dispatcher.dispatch("firstEvent");
 
 		expect(calls).toEqual([1, 2]);
 	});
@@ -19,12 +19,12 @@ describe(".on", () => {
 		const calls: number[] = [];
 		const listener = () => calls.push(1);
 
-		const off = emitter.on("firstEvent", listener);
-		await emitter.emit("firstEvent");
+		const off = dispatcher.listen("firstEvent", listener);
+		await dispatcher.dispatch("firstEvent");
 		expect(calls).toEqual([1]);
 
 		off();
-		await emitter.emit("firstEvent");
+		await dispatcher.dispatch("firstEvent");
 		expect(calls).toEqual([1]);
 	});
 
@@ -32,111 +32,137 @@ describe(".on", () => {
 		const calls: number[] = [];
 		const listener = () => calls.push(1);
 
-		emitter.on("firstEvent", listener);
-		emitter.on("firstEvent", listener);
-		emitter.on("firstEvent", listener);
+		dispatcher.listen("firstEvent", listener);
+		dispatcher.listen("firstEvent", listener);
+		dispatcher.listen("firstEvent", listener);
 
-		await emitter.emit("firstEvent");
+		await dispatcher.dispatch("firstEvent");
 
 		expect(calls).toEqual([1]);
 	});
 });
 
-describe(".off", () => {
-	it("should remove an event listener", async () => {
+describe(".listenMany", () => {
+	it("should add many event listeners", async () => {
+		const calls: number[] = [];
+		dispatcher.listenMany([["firstEvent", () => calls.push(1)], ["secondEvent", () => calls.push(2)]]);
+
+		await dispatcher.dispatch("firstEvent");
+
+		expect(calls).toEqual([1]);
+
+		await dispatcher.dispatch("secondEvent");
+
+		expect(calls).toEqual([1, 2]);
+	});
+
+	it("should prevent duplicate listeners", async () => {
 		const calls: number[] = [];
 		const listener = () => calls.push(1);
 
-		emitter.on("firstEvent", listener);
+		dispatcher.listenMany([["firstEvent", listener], ["firstEvent", listener], ["firstEvent", listener]]);
 
-		await emitter.emit("firstEvent");
-
-		expect(calls).toEqual([1]);
-
-		emitter.off("firstEvent", listener);
-
-		await emitter.emit("firstEvent");
+		await dispatcher.dispatch("firstEvent");
 
 		expect(calls).toEqual([1]);
 	});
 });
 
-describe(".once", () => {
+describe(".listenOnce", () => {
 	it("should listen once", async () => {
 		let unicorn: boolean = false;
 
 		expect(unicorn).toBeFalse();
 
-		emitter.once("firstEvent", data => {
+		dispatcher.listenOnce("firstEvent", (_, data) => {
 			unicorn = data;
 		});
 
-		await emitter.emitSeq("firstEvent", true);
+		await dispatcher.dispatchSeq("firstEvent", true);
 
 		expect(unicorn).toBeTrue();
 
-		await emitter.emitSeq("firstEvent", false);
+		await dispatcher.dispatchSeq("firstEvent", false);
 
 		expect(unicorn).toBeTrue();
 	});
 });
 
-describe(".emit", () => {
+describe(".forget", () => {
+	it("should remove an event listener", async () => {
+		const calls: number[] = [];
+		const listener = () => calls.push(1);
+
+		dispatcher.listen("firstEvent", listener);
+
+		await dispatcher.dispatch("firstEvent");
+
+		expect(calls).toEqual([1]);
+
+		dispatcher.forget("firstEvent", listener);
+
+		await dispatcher.dispatch("firstEvent");
+
+		expect(calls).toEqual([1]);
+	});
+});
+
+describe(".dispatch", () => {
 	it("should emit one event", () => {
-		emitter.on("firstEvent", data => {
+		dispatcher.listen("firstEvent", (_, data) => {
 			expect(data).toEqual(true);
 		});
 
-		emitter.emit("firstEvent", true);
+		dispatcher.dispatch("firstEvent", true);
 	});
 
 	it("should emit multiple events", () => {
 		let count = 0;
 
-		emitter.on("firstEvent", () => {
+		dispatcher.listen("firstEvent", () => {
 			if (++count >= 5) {
 				expect(count).toBe(5);
 			}
 		});
 
-		emitter.emit("firstEvent");
-		emitter.emit("firstEvent");
-		emitter.emit("firstEvent");
-		emitter.emit("firstEvent");
-		emitter.emit("firstEvent");
+		dispatcher.dispatch("firstEvent");
+		dispatcher.dispatch("firstEvent");
+		dispatcher.dispatch("firstEvent");
+		dispatcher.dispatch("firstEvent");
+		dispatcher.dispatch("firstEvent");
 	});
 
 	it("should not execute an event listener without await", () => {
 		let unicorn: boolean = false;
 
-		emitter.on("firstEvent", () => (unicorn = true));
+		dispatcher.listen("firstEvent", () => (unicorn = true));
 
-		emitter.emit("firstEvent");
+		dispatcher.dispatch("firstEvent");
 
 		expect(unicorn).toBeFalse();
 	});
 });
 
-describe(".emitSeq", () => {
+describe(".dispatchSeq", () => {
 	it("should not execute an event listener without await (async behaviour)", () => {
 		let unicorn: boolean = false;
 
-		emitter.on("firstEvent", () => (unicorn = true));
+		dispatcher.listen("firstEvent", () => (unicorn = true));
 
-		emitter.emitSeq("firstEvent");
-
-		expect(unicorn).toBeFalse();
-	});
-
-	it("should not execute a wildcard listener without await (async behaviour)", () => {
-		let unicorn: boolean = false;
-
-		emitter.onAny(() => (unicorn = true));
-
-		emitter.emitSeq("firstEvent");
+		dispatcher.dispatchSeq("firstEvent");
 
 		expect(unicorn).toBeFalse();
 	});
+
+	// it("should not execute a wildcard listener without await (async behaviour)", () => {
+	// 	let unicorn: boolean = false;
+
+	// 	dispatcher.onAny(() => (unicorn = true));
+
+	// 	dispatcher.dispatchSeq("firstEvent");
+
+	// 	expect(unicorn).toBeFalse();
+	// });
 
 	it("should emit all events in sequence", () => {
 		const events: number[] = [];
@@ -149,34 +175,34 @@ describe(".emitSeq", () => {
 			}
 		};
 
-		emitter.on("firstEvent", () => listener(1));
-		emitter.on("firstEvent", () => listener(2));
-		emitter.on("firstEvent", () => listener(3));
+		dispatcher.listen("firstEvent", () => listener(1));
+		dispatcher.listen("firstEvent", () => listener(2));
+		dispatcher.listen("firstEvent", () => listener(3));
 
-		emitter.emitSeq("firstEvent");
+		dispatcher.dispatchSeq("firstEvent");
 	});
 });
 
-describe(".emitSync", () => {
+describe(".dispatchSync", () => {
 	it("should execute an event listener without await", () => {
 		let unicorn: boolean = false;
 
-		emitter.on("firstEvent", () => (unicorn = true));
+		dispatcher.listen("firstEvent", () => (unicorn = true));
 
-		emitter.emitSync("firstEvent");
-
-		expect(unicorn).toBeTrue();
-	});
-
-	it("should execute a wildcard listener without await", () => {
-		let unicorn: boolean = false;
-
-		emitter.onAny(() => (unicorn = true));
-
-		emitter.emitSync("firstEvent");
+		dispatcher.dispatchSync("firstEvent");
 
 		expect(unicorn).toBeTrue();
 	});
+
+	// it("should execute a wildcard listener without await", () => {
+	// 	let unicorn: boolean = false;
+
+	// 	dispatcher.onAny(() => (unicorn = true));
+
+	// 	dispatcher.emitSync("firstEvent");
+
+	// 	expect(unicorn).toBeTrue();
+	// });
 
 	it("should emit all events in sequence", () => {
 		const events: number[] = [];
@@ -189,125 +215,125 @@ describe(".emitSync", () => {
 			}
 		};
 
-		emitter.on("firstEvent", () => listener(1));
-		emitter.on("firstEvent", () => listener(2));
-		emitter.on("firstEvent", () => listener(3));
+		dispatcher.listen("firstEvent", () => listener(1));
+		dispatcher.listen("firstEvent", () => listener(2));
+		dispatcher.listen("firstEvent", () => listener(3));
 
-		emitter.emitSync("firstEvent");
+		dispatcher.dispatchSync("firstEvent");
 	});
 });
 
-describe(".onAny", () => {
-	it("should add a wildcard listener", async () => {
-		emitter.onAny((eventName, data) => {
-			expect(eventName).toBe("firstEvent");
-			expect(data).toEqual(true);
-		});
+// describe(".onAny", () => {
+// 	it("should add a wildcard listener", async () => {
+// 		dispatcher.onAny((eventName, data) => {
+// 			expect(eventName).toBe("firstEvent");
+// 			expect(data).toEqual(true);
+// 		});
 
-		await emitter.emit("firstEvent", true);
-		await emitter.emitSeq("firstEvent", true);
-	});
-});
+// 		await dispatcher.emit("firstEvent", true);
+// 		await dispatcher.dispatchSeq("firstEvent", true);
+// 	});
+// });
 
-describe(".offAny", () => {
-	it("should remove a wildcard listener", async () => {
-		const calls: number[] = [];
-		const listener = () => calls.push(1);
+// describe(".offAny", () => {
+// 	it("should remove a wildcard listener", async () => {
+// 		const calls: number[] = [];
+// 		const listener = () => calls.push(1);
 
-		emitter.onAny(listener);
+// 		dispatcher.onAny(listener);
 
-		await emitter.emit("firstEvent");
+// 		await dispatcher.emit("firstEvent");
 
-		expect(calls).toEqual([1]);
+// 		expect(calls).toEqual([1]);
 
-		emitter.offAny(listener);
+// 		dispatcher.offAny(listener);
 
-		await emitter.emit("firstEvent");
+// 		await dispatcher.emit("firstEvent");
 
-		expect(calls).toEqual([1]);
-	});
-});
+// 		expect(calls).toEqual([1]);
+// 	});
+// });
 
-describe(".clearListeners", () => {
-	it("should clear all listeners", async () => {
-		const calls: string[] = [];
+// describe(".clearListeners", () => {
+// 	it("should clear all listeners", async () => {
+// 		const calls: string[] = [];
 
-		emitter.on("firstEvent", () => calls.push("firstEvent"));
-		emitter.on("secondEvent", () => calls.push("secondEvent"));
-		emitter.onAny(() => calls.push("any"));
+// 		dispatcher.on("firstEvent", () => calls.push("firstEvent"));
+// 		dispatcher.on("secondEvent", () => calls.push("secondEvent"));
+// 		dispatcher.onAny(() => calls.push("any"));
 
-		await emitter.emit("firstEvent");
-		await emitter.emit("secondEvent");
+// 		await dispatcher.emit("firstEvent");
+// 		await dispatcher.emit("secondEvent");
 
-		expect(calls).toEqual(["firstEvent", "any", "secondEvent", "any"]);
+// 		expect(calls).toEqual(["firstEvent", "any", "secondEvent", "any"]);
 
-		emitter.clearListeners();
+// 		dispatcher.clearListeners();
 
-		await emitter.emit("firstEvent");
-		await emitter.emit("secondEvent");
+// 		await dispatcher.emit("firstEvent");
+// 		await dispatcher.emit("secondEvent");
 
-		expect(calls).toEqual(["firstEvent", "any", "secondEvent", "any"]);
-	});
+// 		expect(calls).toEqual(["firstEvent", "any", "secondEvent", "any"]);
+// 	});
 
-	it("should clear all listeners for an event", async () => {
-		const calls: string[] = [];
+// 	it("should clear all listeners for an event", async () => {
+// 		const calls: string[] = [];
 
-		emitter.on("firstEvent", () => calls.push("firstEvent"));
-		emitter.on("secondEvent", () => calls.push("secondEvent"));
-		emitter.onAny(() => calls.push("any"));
+// 		dispatcher.on("firstEvent", () => calls.push("firstEvent"));
+// 		dispatcher.on("secondEvent", () => calls.push("secondEvent"));
+// 		dispatcher.onAny(() => calls.push("any"));
 
-		await emitter.emit("firstEvent");
-		await emitter.emit("secondEvent");
+// 		await dispatcher.emit("firstEvent");
+// 		await dispatcher.emit("secondEvent");
 
-		expect(calls).toEqual(["firstEvent", "any", "secondEvent", "any"]);
+// 		expect(calls).toEqual(["firstEvent", "any", "secondEvent", "any"]);
 
-		emitter.clearListeners("firstEvent");
+// 		dispatcher.clearListeners("firstEvent");
 
-		await emitter.emit("firstEvent");
-		await emitter.emit("secondEvent");
+// 		await dispatcher.emit("firstEvent");
+// 		await dispatcher.emit("secondEvent");
 
-		expect(calls).toEqual(["firstEvent", "any", "secondEvent", "any", "any", "secondEvent", "any"]);
-	});
-});
+// 		expect(calls).toEqual(["firstEvent", "any", "secondEvent", "any", "any", "secondEvent", "any"]);
+// 	});
+// });
 
-describe(".listenerCount", () => {
-	it("should return the total listener count", () => {
-		emitter.on("firstEvent", () => null);
-		emitter.on("secondEvent", () => null);
-		emitter.onAny(() => null);
+// describe(".listenerCount", () => {
+// 	it("should return the total listener count", () => {
+// 		dispatcher.on("firstEvent", () => null);
+// 		dispatcher.on("secondEvent", () => null);
+// 		dispatcher.onAny(() => null);
 
-		expect(emitter.listenerCount("firstEvent")).toBe(2);
-		expect(emitter.listenerCount("secondEvent")).toBe(2);
-		expect(emitter.listenerCount()).toBe(3);
-	});
-});
+// 		expect(dispatcher.listenerCount("firstEvent")).toBe(2);
+// 		expect(dispatcher.listenerCount("secondEvent")).toBe(2);
+// 		expect(dispatcher.listenerCount()).toBe(3);
+// 	});
+// });
 
-describe(".listeners", () => {
-	it("should return the total listener count", () => {
-		const listener = (): null => null;
+// describe(".listeners", () => {
+// 	it("should return the total listener count", () => {
+// 		const listener = (): null => null;
 
-		emitter.on("firstEvent", listener);
+// 		dispatcher.on("firstEvent", listener);
 
-		expect(emitter.listeners("firstEvent")).toEqual(new Set([listener]));
-	});
-});
+// 		expect(dispatcher.listeners("firstEvent")).toEqual(new Set([listener]));
+// 	});
+// });
 
-describe(".rawListeners", () => {
-	it("should return the total listener count", () => {
-		const listener = (): null => null;
+// describe(".rawListeners", () => {
+// 	it("should return the total listener count", () => {
+// 		const listener = (): null => null;
 
-		emitter.on("firstEvent", listener);
+// 		dispatcher.on("firstEvent", listener);
 
-		expect(emitter.rawListeners("firstEvent")).toEqual([listener]);
-	});
-});
+// 		expect(dispatcher.rawListeners("firstEvent")).toEqual([listener]);
+// 	});
+// });
 
-describe(".eventNames", () => {
-	it("should return the total listener count", () => {
-		emitter.on("firstEvent", () => null);
-		emitter.on("secondEvent", () => null);
-		emitter.onAny(() => null);
+// describe(".eventNames", () => {
+// 	it("should return the total listener count", () => {
+// 		dispatcher.on("firstEvent", () => null);
+// 		dispatcher.on("secondEvent", () => null);
+// 		dispatcher.onAny(() => null);
 
-		expect(emitter.eventNames()).toEqual(["firstEvent", "secondEvent"]);
-	});
-});
+// 		expect(dispatcher.eventNames()).toEqual(["firstEvent", "secondEvent"]);
+// 	});
+// });

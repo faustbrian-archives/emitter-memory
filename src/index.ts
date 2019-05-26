@@ -1,106 +1,97 @@
-export type EventName = string | symbol;
-export type EventHandler = (data: any) => void;
-export type WildcardEventHandler = (name: EventName, data: any) => void;
+import { EventListener, EventName, IEventDispatcher } from "@emittr/emittr";
 
-export class Evento {
-	private readonly listenersWildcard: Set<WildcardEventHandler> = new Set<WildcardEventHandler>();
-	private readonly listenersEvent: Map<EventName, Set<EventHandler>> = new Map<EventName, Set<EventHandler>>();
+export class MemoryDispatcher implements IEventDispatcher {
+	private readonly listeners: Map<EventName, Set<EventListener>> = new Map<EventName, Set<EventListener>>();
 
-	public on(name: EventName, listener: EventHandler): () => void {
-		this.listeners(name).add(listener);
+	public listen(event: EventName, listener: EventListener): () => void {
+		this.getListenersForEvent(event).add(listener);
 
-		return this.off.bind(this, name, listener);
+		return this.forget.bind(this, event, listener);
 	}
 
-	public off(name: EventName, listener: EventHandler): void {
-		this.listeners(name).delete(listener);
+	public listenMany(events: Array<[EventName, EventListener]>): Map<EventName, () => void> {
+		const listeners: Map<EventName, () => void> = new Map();
+
+		for (const [event, listener] of events) {
+			listeners.set(event, this.listen(event, listener));
+		}
+
+		return listeners;
 	}
 
-	public once(name: EventName, listener: EventHandler): void {
-		const off: () => void = this.on(name, data => {
+	public listenOnce(name: EventName, listener: EventListener): void {
+		const off: () => void = this.listen(name, (event, data) => {
 			off();
 
-			listener(data);
+			listener(event, data);
 		});
 	}
 
-	public async emit(name: EventName, data?: any): Promise<void> {
+	public forget(event: EventName, listener: EventListener): void {
+		this.getListenersForEvent(event).delete(listener);
+	}
+
+	public forgetMany(events: Array<[EventName, EventListener]>): void {
+		for (const [event, listener] of events) {
+			this.forget(event, listener);
+		}
+	}
+
+	public flush(): void {
+		this.listeners.clear();
+	}
+
+	public getListeners(event?: EventName): EventListener[] {
+		return Array.from(this.getListenersForEvent(event));
+	}
+
+	public hasListeners(event: EventName): boolean {
+		return this.getListenersForEvent(event).size > 0;
+	}
+
+	public async dispatch(event: EventName, data?: any): Promise<void> {
 		await Promise.resolve();
 
-		await Promise.all([
-			Array.from(this.listeners(name)).map((listener: EventHandler) => listener(data)),
-			Array.from(this.listenersWildcard).map((listener: WildcardEventHandler) => listener(name, data)),
-		]);
+		await Promise.all(
+			Array.from(this.getListenersForEvent(event)).map((listener: EventListener) => listener(event, data)),
+		);
 	}
 
-	public async emitSeq(name: EventName, data?: any): Promise<void> {
+	public async dispatchSeq(event: EventName, data?: any): Promise<void> {
 		await Promise.resolve();
 
-		for (const listener of this.listeners(name).values()) {
-			await listener(data);
-		}
-
-		for (const listener of this.listenersWildcard.values()) {
-			await listener(name, data);
+		for (const listener of this.getListenersForEvent(event).values()) {
+			await listener(event, data);
 		}
 	}
 
-	public emitSync(name: EventName, data?: any): void {
-		for (const listener of this.listeners(name).values()) {
-			listener(data);
-		}
-
-		for (const listener of this.listenersWildcard.values()) {
-			listener(name, data);
+	public dispatchSync(event: EventName, data?: any): void {
+		for (const listener of this.getListenersForEvent(event).values()) {
+			listener(event, data);
 		}
 	}
 
-	public onAny(listener: WildcardEventHandler): () => void {
-		this.listenersWildcard.add(listener);
-
-		return this.offAny.bind(this, listener);
+	public async dispatchMany(events: Array<[EventName, any]>): Promise<void> {
+		await Promise.all(Object.values(events).map((value: [EventName, any]) => this.dispatch(value[0], value[1])));
 	}
 
-	public offAny(listener: WildcardEventHandler): void {
-		this.listenersWildcard.delete(listener);
-	}
-
-	public clearListeners(name?: EventName): void {
-		if (name) {
-			this.listeners(name).clear();
-		} else {
-			this.listenersWildcard.clear();
-			this.listenersEvent.clear();
+	public async dispatchManySeq(events: Array<[EventName, any]>): Promise<void> {
+		for (const value of Object.values(events)) {
+			await this.dispatchSeq(value[0], value[1]);
 		}
 	}
 
-	public listenerCount(name?: EventName): number {
-		if (name) {
-			return this.listenersWildcard.size + this.listeners(name).size;
+	public dispatchManySync(events: Array<[EventName, any]>): void {
+		for (const value of Object.values(events)) {
+			this.dispatchSync(value[0], value[1]);
 		}
-
-		let count: number = this.listenersWildcard.size;
-
-		for (const value of this.listenersEvent.values()) {
-			count += value.size;
-		}
-
-		return count;
 	}
 
-	public listeners(name: EventName): Set<EventHandler> {
-		if (!this.listenersEvent.has(name)) {
-			this.listenersEvent.set(name, new Set());
+	private getListenersForEvent(name: EventName): Set<EventListener> {
+		if (!this.listeners.has(name)) {
+			this.listeners.set(name, new Set());
 		}
 
-		return this.listenersEvent.get(name);
-	}
-
-	public rawListeners(name: EventName): EventHandler[] {
-		return [...this.listeners(name)];
-	}
-
-	public eventNames(): EventName[] {
-		return [...this.listenersEvent.keys()];
+		return this.listeners.get(name);
 	}
 }
