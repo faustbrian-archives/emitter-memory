@@ -283,10 +283,10 @@
     "@types/istanbul-lib-coverage" "^2.0.0"
     "@types/yargs" "^12.0.9"
 
-"@sindresorhus/tsconfig@^0.3.0":
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/@sindresorhus/tsconfig/-/tsconfig-0.3.0.tgz#610717352725793eb02511dfe25622fb63568ed3"
-  integrity sha512-dc6iqngaTOgnW6uZEj75FtIv1auLICDWRM8nrB8LJDjVFRS3FPa8okVhAgFoEC4c1orm0PLPQE0M+pJQo8Ag8Q==
+"@sindresorhus/tsconfig@^0.4.0":
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/@sindresorhus/tsconfig/-/tsconfig-0.4.0.tgz#de03022de75a26a48fe7596674f2cfaaa142371f"
+  integrity sha512-5b9KULv6SGKZ/Ka7EzLxcqcnD9WuZ1wm/RwfVw4UHr+HoMP7FRpvBKbQ0TIeBOCeSyE5zzPTjYmRgfZnJ3Ifxw==
 
 "@types/babel__core@^7.1.0":
   version "7.1.1"
@@ -357,10 +357,15 @@
   resolved "https://registry.yarnpkg.com/@types/minimatch/-/minimatch-3.0.3.tgz#3dca0e3f33b200fc7d1139c0cd96c1268cadfd9d"
   integrity sha512-tHq6qdbT9U1IRSGf14CL0pUlULksvY9OZ+5eEgl1N7t+OA3tGvNpxJCzuKQlsNgCVwbAs670L1vcVQi8j9HjnA==
 
-"@types/node@*", "@types/node@^11.13.7":
+"@types/node@*":
   version "11.13.8"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-11.13.8.tgz#e5d71173c95533be9842b2c798978f095f912aab"
   integrity sha512-szA3x/3miL90ZJxUCzx9haNbK5/zmPieGraZEe4WI+3srN0eGLiT22NXeMHmyhNEopn+IrxqMc7wdVwvPl8meg==
+
+"@types/node@^12.0.7":
+  version "12.0.7"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-12.0.7.tgz#4f2563bad652b2acb1722d7e7aae2b0ff62d192c"
+  integrity sha512-1YKeT4JitGgE4SOzyB9eMwO0nGVNkNEsm9qlIt1Lqm/tG2QEiSMTD4kS3aO6L+w5SClLVxALmIBESK6Mk5wX0A==
 
 "@types/prettier@^1.16.3":
   version "1.16.3"
