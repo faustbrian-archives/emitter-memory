@@ -6,7 +6,7 @@
 [![Node Engine](https://badgen.now.sh/npm/node/@faustbrian/evento)](https://www.npmjs.com/package/@faustbrian/evento)
 [![Build Status](https://badgen.now.sh/circleci/github/faustbrian/evento)](https://circleci.com/gh/faustbrian/evento)
 [![Codecov](https://badgen.now.sh/codecov/c/github/faustbrian/evento)](https://codecov.io/gh/faustbrian/evento)
-[![License: MPL-2.0](https://badgen.now.sh/badge/license/MPL-2.0/green)](https://mozilla.org/MPL/2.0/)
+[![License: MPL-2.0](https://badgen.now.sh/badge/license/MPL-2.0/green)](https://mozilla.org/MPL/2.0/) [![Greenkeeper badge](https://badges.greenkeeper.io/emittr/memory.svg)](https://greenkeeper.io/)
 
 ## Installation
 
