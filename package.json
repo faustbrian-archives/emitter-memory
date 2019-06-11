@@ -65,7 +65,7 @@
 	},
 	"devDependencies": {
 		"@types/jest": "^24.0.13",
-		"@types/node": "^12.0.7",
+		"@types/node": "^12.0.8",
 		"@types/prettier": "^1.16.4",
 		"@types/rimraf": "^2.0.2",
 		"@typeskrift/tsconfig": "^0.1.0",
