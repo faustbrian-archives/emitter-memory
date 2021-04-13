@@ -1,10 +1,15 @@
+/* eslint-disable @typescript-eslint/await-thenable */
+
 export type EventName = string | symbol;
 export type EventHandler = (data: any) => void;
 export type WildcardEventHandler = (name: EventName, data: any) => void;
 
 export class Evento {
 	private readonly listenersWildcard: Set<WildcardEventHandler> = new Set<WildcardEventHandler>();
-	private readonly listenersEvent: Map<EventName, Set<EventHandler>> = new Map<EventName, Set<EventHandler>>();
+	private readonly listenersEvent: Map<EventName, Set<EventHandler>> = new Map<
+		EventName,
+		Set<EventHandler>
+	>();
 
 	public on(name: EventName, listener: EventHandler): () => void {
 		this.listeners(name).add(listener);
@@ -17,7 +22,7 @@ export class Evento {
 	}
 
 	public once(name: EventName, listener: EventHandler): void {
-		const off: () => void = this.on(name, data => {
+		const off: () => void = this.on(name, (data) => {
 			off();
 
 			listener(data);
@@ -28,8 +33,12 @@ export class Evento {
 		await Promise.resolve();
 
 		await Promise.all([
-			Array.from(this.listeners(name)).map((listener: EventHandler) => listener(data)),
-			Array.from(this.listenersWildcard).map((listener: WildcardEventHandler) => listener(name, data)),
+			Array.from(this.listeners(name)).map((listener: EventHandler) =>
+				listener(data)
+			),
+			Array.from(this.listenersWildcard).map((listener: WildcardEventHandler) =>
+				listener(name, data)
+			),
 		]);
 	}
 
@@ -93,7 +102,7 @@ export class Evento {
 			this.listenersEvent.set(name, new Set());
 		}
 
-		return this.listenersEvent.get(name);
+		return this.listenersEvent.get(name)!;
 	}
 
 	public rawListeners(name: EventName): EventHandler[] {
